@@ -85,19 +85,10 @@ jobs:
       - name: Run renewal script with xvfb
         working-directory: scripts
         env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
           SOCKS_PROXY_URL: ${{ secrets.SOCKS_PROXY_URL }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" python main.py
-      
-      - name: Commit updated session
-        if: success()
-        working-directory: scripts
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add KERIT_DISCORD_SESSION.json
-          git diff --staged --quiet || git commit -m "Update Discord session [skip ci]"
-          git push || echo "No changes to push"
       
       - name: Upload screenshot
         if: always()
