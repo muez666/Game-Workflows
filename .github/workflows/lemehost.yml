@@ -35,7 +35,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LEMEHOST_ACCOUNTS: ${{ secrets.LEMEHOST_ACCOUNTS }}
-          ORT_LOGGING_LEVEL: 3
         run: python main.py
       
       - name: Commit and push cookies to private repo
