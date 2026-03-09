@@ -40,7 +40,11 @@ jobs:
         
     - name: Run claim script
       working-directory: scripts
-      run: python main.py
+      run: |
+        # 使用 xvfb-run 在虚拟显示中运行有头模式（支持扩展）
+        xvfb-run -a python main.py
+      env:
+        DISPLAY: ':99'
       
     - name: Upload artifacts
       if: always()
