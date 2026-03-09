@@ -45,6 +45,8 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: results-${{ github.run_number }}
-        path: scripts/*.json
+        path: |
+          scripts/user_info.json
+          scripts/screenshots/
         retention-days: 7
         if-no-files-found: ignore
