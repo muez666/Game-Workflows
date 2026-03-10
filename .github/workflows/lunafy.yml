@@ -27,14 +27,14 @@ jobs:
       
       - name: Setup Gost Proxy
         env:
-          SOCKS_PROXY_URL: ${{ secrets.SOCKS_PROXY_URL }}
+          LUNAFY_SOCKS_PROXY: ${{ secrets.LUNAFY_SOCKS_PROXY }}
         run: |
-          if [ -z "$SOCKS_PROXY_URL" ]; then
+          if [ -z "$LUNAFY_SOCKS_PROXY" ]; then
             echo "⚠️ 未配置 SOCKS 代理，跳过"
             exit 0
           fi
           
-          echo "🌐 配置代理: ${SOCKS_PROXY_URL%%:*}://***"
+          echo "🌐 配置代理: ${LUNAFY_SOCKS_PROXY%%:*}://***"
           
           # 安装 Gost
           wget -q https://github.com/ginuerzh/gost/releases/download/v2.11.5/gost-linux-amd64-2.11.5.gz
@@ -43,7 +43,7 @@ jobs:
           sudo chmod +x /usr/local/bin/gost
           
           # 启动 Gost
-          nohup gost -L=:1080 -F="$SOCKS_PROXY_URL" > gost.log 2>&1 &
+          nohup gost -L=:1080 -F="$LUNAFY_SOCKS_PROXY" > gost.log 2>&1 &
           sleep 5
           
           # 验证
@@ -76,7 +76,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          SOCKS_PROXY_URL: ${{ secrets.SOCKS_PROXY_URL }}
+          LUNAFY_SOCKS_PROXY: ${{ secrets.LUNAFY_SOCKS_PROXY }}
           USE_GOST_PROXY: true
           TZ: Asia/Shanghai
         working-directory: scripts
