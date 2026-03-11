@@ -3,7 +3,7 @@ name: Lemehost Cookie Autosave
 on:
   schedule:
     # 每小时运行一次
-    - cron: '0 * * * *'
+    - cron: '5 * * * *'
   workflow_dispatch:  # 支持手动触发
 
 jobs:
