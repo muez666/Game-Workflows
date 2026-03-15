@@ -1,21 +1,21 @@
-name: XServer Paper Auto Renew
+name: XServer GAME Auto Renew
 
 on:
   schedule:
-    # 每天北京时间22:35运行 (UTC时间: 14:35)
-    - cron: '35 14 * * *'
+    # 每天北京时间21:00运行
+    - cron: '0 13 * * *'
   workflow_dispatch:  # 允许手动触发
 
 jobs:
   auto-login:
-    runs-on: ubuntu-22.04   
+    runs-on: ubuntu-22.04
     timeout-minutes: 15
     
     steps:
     - name: Checkout private script repository
       uses: actions/checkout@v4
       with:
-        repository: ${{ github.repository_owner }}/Xserver-Paper-Auto-Renew  # 私有仓库
+        repository: ${{ github.repository_owner }}/Game-Auto-Scripts  # 私有仓库
         token: ${{ secrets.PRIVATE_REPO_TOKEN }}  # 需要有读取私库权限的 PAT
         path: scripts
       
@@ -25,7 +25,7 @@ jobs:
         python-version: '3.11'
         
     - name: Install Python dependencies
-      working-directory: scripts
+      working-directory: scripts/Xserver
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
@@ -40,12 +40,10 @@ jobs:
         
     - name: Run XServer auto renew
       env:
-        XSERVER_EMAIL: ${{ secrets.XSERVER_EMAIL }}
-        XSERVER_PASSWORD: ${{ secrets.XSERVER_PASSWORD }}
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         TZ: Asia/Shanghai
-      working-directory: scripts
+      working-directory: scripts/Xserver
       run: python main.py
         
     - name: Upload artifacts
@@ -53,6 +51,6 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: xserver-results-${{ github.run_number }}
-        path: scripts/*.png
+        path: scripts/Xserver/*.png
         retention-days: 7
         if-no-files-found: ignore
