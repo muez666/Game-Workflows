@@ -15,7 +15,7 @@ jobs:
       - name: Checkout private repo
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.repository_owner }}/Velrix-Auto-Renew
+          repository: ${{ github.repository_owner }}/Game-Auto-Scripts
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
           path: scripts
       
@@ -44,12 +44,12 @@ jobs:
           ps aux | grep gost || echo "Warning: gost may not be running"
       
       - name: Install dependencies
-        working-directory: scripts
+        working-directory: scripts/Velrix
         run: |
           pip install -r requirements.txt -q
       
       - name: Run renewal script
-        working-directory: scripts
+        working-directory: scripts/Velrix
         env:
           VELRIX_USERNAME: ${{ secrets.VELRIX_USERNAME }}
           SOCKS_PROXY_URL: ${{ secrets.SOCKS_PROXY_URL }}
@@ -63,5 +63,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: api-responses
-          path: scripts/api_responses/
+          path: scripts/Velrix/api_responses/
           retention-days: 7
