@@ -12,7 +12,7 @@ jobs:
       - name: Checkout private repo
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.repository_owner }}/CloudBlaze-Auto-Start
+          repository: ${{ github.repository_owner }}/Game-Auto-Scripts
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
           path: scripts
 
@@ -22,14 +22,14 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        working-directory: scripts
+        working-directory: scripts/Cloudblaze
         run: |
           pip install -r requirements.txt
           playwright install chromium
           playwright install-deps chromium
 
       - name: Run script
-        working-directory: scripts
+        working-directory: scripts/Cloudblaze
         run: python main.py
 
       - name: Upload screenshots
@@ -37,6 +37,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: screenshots
-          path: scripts/screenshot/
+          path: scripts/Cloudblaze/screenshot/
           if-no-files-found: ignore
           retention-days: 7
