@@ -15,8 +15,8 @@ jobs:
     - name: Checkout private script repository
       uses: actions/checkout@v4
       with:
-        repository: ${{ github.repository_owner }}/Game-Auto-Scripts  # 私有仓库
-        token: ${{ secrets.PRIVATE_REPO_TOKEN }}  # 需要有读取私库权限的 PAT
+        repository: ${{ github.repository_owner }}/${{ secrets.PRIVATE_REPO_NAME }}
+        token: ${{ secrets.PRIVATE_REPO_TOKEN }}
         path: scripts
       
     - name: Set up Python
