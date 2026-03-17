@@ -16,7 +16,7 @@ jobs:
     - name: Checkout private script repository
       uses: actions/checkout@v4
       with:
-        repository: ${{ github.repository_owner }}${{ secrets.PRIVATE_REPO_NAME }}
+        repository: ${{ github.repository_owner }}/${{ secrets.PRIVATE_REPO_NAME }}
         token: ${{ secrets.PRIVATE_REPO_TOKEN }}
         path: scripts
     
