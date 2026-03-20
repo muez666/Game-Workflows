@@ -23,12 +23,10 @@ jobs:
           path: scripts
 
       - name: Set up WARP
-        continue-on-error: true
-        timeout-minutes: 3
         uses: fscarmen/warp-on-actions@v1.4
         with:
           stack: dual
-          mode: wireguard
+          mode: client
       
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -47,9 +45,6 @@ jobs:
       - name: Run login script
         working-directory: scripts/Searcade
         env:
-          SEARCADE_MAIL: ${{ secrets.SEARCADE_MAIL }}
-          SEARCADE_PASS: ${{ secrets.SEARCADE_PASS }}
-          SERVER_ID: ${{ secrets.SERVER_ID }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TZ: Asia/Shanghai
