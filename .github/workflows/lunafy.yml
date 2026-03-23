@@ -1,0 +1,118 @@
+name: Lunafy Auto Renew
+
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+jobs:
+  renew:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout Private Repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/${{ secrets.PRIVATE_REPO_NAME }}
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          path: scripts
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: 'scripts/Lunafy/requirements.txt'
+      
+      - name: Setup Gost Proxy
+        env:
+          LUNAFY_SOCKS_PROXY: ${{ secrets.LUNAFY_SOCKS_PROXY }}
+        run: |
+          if [ -z "$LUNAFY_SOCKS_PROXY" ]; then
+            echo "⚠️ 未配置 SOCKS 代理，跳过"
+            exit 0
+          fi
+          
+          echo "🌐 配置代理: ${LUNAFY_SOCKS_PROXY%%:*}://***"
+          
+          # 安装 Gost
+          wget -q https://github.com/ginuerzh/gost/releases/download/v2.11.5/gost-linux-amd64-2.11.5.gz
+          gunzip gost-linux-amd64-2.11.5.gz
+          sudo mv gost-linux-amd64-2.11.5 /usr/local/bin/gost
+          sudo chmod +x /usr/local/bin/gost
+          
+          # 启动 Gost
+          nohup gost -L=:1080 -F="$LUNAFY_SOCKS_PROXY" > gost.log 2>&1 &
+          sleep 5
+          
+          # 验证
+          if pgrep -x "gost" > /dev/null && netstat -tuln | grep -q ":1080 "; then
+            echo "✅ Gost 代理已启动"
+          else
+            echo "❌ Gost 启动失败"
+            cat gost.log 2>/dev/null
+            exit 1
+          fi
+          
+          # 测试代理连接
+          if curl -x socks5://127.0.0.1:1080 https://www.google.com -I --max-time 10 --silent --fail > /dev/null 2>&1; then
+            echo "✅ 代理连接测试成功"
+          else
+            echo "⚠️ 代理连接测试失败（可能是上游代理问题，继续执行）"
+          fi
+      
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r scripts/Lunafy/requirements.txt
+      
+      - name: Install Playwright Browser
+        run: |
+          playwright install chromium
+          playwright install-deps
+      
+      - name: Run Lunafy Script
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          LUNAFY_SOCKS_PROXY: ${{ secrets.LUNAFY_SOCKS_PROXY }}
+          USE_GOST_PROXY: true
+          TZ: Asia/Shanghai
+        working-directory: scripts/Lunafy
+        run: python main.py
+      
+      - name: Upload Screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ github.run_number }}
+          path: scripts/Lunafy/screenshots/
+          if-no-files-found: ignore
+          retention-days: 7
+      
+      - name: Commit Updated Session
+        if: success()
+        working-directory: scripts/Lunafy
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add FREEZEHOST_DISCORD_SESSION.json
+          git diff --staged --quiet || git commit -m "Update Discord session [skip ci]"
+          git pull --rebase && git push
+      
+      - name: Upload Error Screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: error-screenshots
+          path: scripts/Lunafy/screenshots/
+          if-no-files-found: ignore
+      
+      - name: Failure Notification
+        if: failure()
+        run: |
+          echo "Lunafy script failed"
+          echo "Time: $(date)"
+          echo "Workflow: ${{ github.workflow }}"
+          echo "Run ID: ${{ github.run_id }}"
