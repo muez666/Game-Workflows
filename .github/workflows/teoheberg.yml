@@ -1,0 +1,74 @@
+name: Teoheberg Auto Claim
+
+on:
+  # 每天 UTC 4:00 运行（北京时间 12:00）
+  schedule:
+    - cron: '0 4 * * *'
+  # 手动触发
+  workflow_dispatch:
+
+jobs:
+  claim:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout private repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/${{ secrets.PRIVATE_REPO_NAME }}
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          path: scripts
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install gost (proxy converter)
+        run: |
+          wget -q https://github.com/ginuerzh/gost/releases/download/v2.11.5/gost-linux-amd64-2.11.5.gz
+          gunzip gost-linux-amd64-2.11.5.gz
+          chmod +x gost-linux-amd64-2.11.5
+          sudo mv gost-linux-amd64-2.11.5 /usr/local/bin/gost
+      
+      - name: Start gost proxy (if proxy configured)
+        env:
+          SOCKS_PROXY_URL: ${{ secrets.SOCKS_PROXY_URL }}
+        if: ${{ env.SOCKS_PROXY_URL != '' }}
+        run: |
+          # 启动 gost 作为后台进程，将带认证的 SOCKS5 转换为本地 SOCKS5 代理（无认证）
+          nohup gost -L=socks5://127.0.0.1:1080 -F=$SOCKS_PROXY_URL > /tmp/gost.log 2>&1 &
+          sleep 3
+          echo "Gost proxy started on 127.0.0.1:1080 (SOCKS5)"
+          # 验证 gost 是否运行
+          ps aux | grep gost || echo "Warning: gost may not be running"
+      
+      - name: Install Playwright
+        working-directory: scripts/Teoheberg
+        run: |
+          pip install playwright -q
+          playwright install chromium
+          playwright install-deps chromium
+      
+      - name: Install dependencies
+        working-directory: scripts/Teoheberg
+        run: |
+          pip install -r requirements.txt -q
+      
+      - name: Run linkvertise claim script
+        working-directory: scripts/Teoheberg
+        env:
+          REMEMBER_WEB_COOKIE: ${{ secrets.REMEMBER_WEB_COOKIE }}
+          SOCKS_PROXY_URL: ${{ secrets.SOCKS_PROXY_URL }}
+          USE_GOST_PROXY: ${{ secrets.SOCKS_PROXY_URL != '' && 'true' || 'false' }}
+          GITHUB_ACTIONS: 'true'
+        run: python main2.py
+      
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: teoheberg-screenshots
+          path: scripts/Teoheberg/*.png
+          retention-days: 7
+          if-no-files-found: ignore
