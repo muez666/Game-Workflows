@@ -1,9 +1,9 @@
-name: Gaming4free Auto Renewal
+name: Gaming4free Auto Renew
 
 on:
   # 每小时运行一次
-  schedule:
-    - cron: '5 * * * *'
+  # schedule:
+  #   - cron: '5 * * * *'
   # 手动触发
   workflow_dispatch:
 
