@@ -12,8 +12,12 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout repository
+      - name: Checkout private repo
         uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/${{ secrets.PRIVATE_REPO_NAME }}
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          path: scripts
       
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -40,6 +44,7 @@ jobs:
           ps aux | grep gost || echo "Warning: gost may not be running"
       
       - name: Download Buster extension
+        working-directory: scripts/Teoheberg
         run: |
           echo "📦 下载 Buster 扩展..."
           mkdir -p extensions
@@ -56,16 +61,19 @@ jobs:
           ls -la buster/
       
       - name: Install Playwright
+        working-directory: scripts/Teoheberg
         run: |
           pip install playwright -q
           playwright install chromium
           playwright install-deps chromium
       
       - name: Install dependencies
+        working-directory: scripts/Teoheberg
         run: |
           pip install -r requirements.txt -q
       
       - name: Run Teoheberg automation
+        working-directory: scripts/Teoheberg
         env:
           REMEMBER_WEB_COOKIE: ${{ secrets.REMEMBER_WEB_COOKIE }}
           SOCKS_PROXY_URL: ${{ secrets.SOCKS_PROXY_URL }}
@@ -80,7 +88,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: teoheberg-screenshots
-          path: "*.png"
+          path: scripts/Teoheberg/*.png
           retention-days: 7
           if-no-files-found: ignore
       
@@ -90,8 +98,8 @@ jobs:
         with:
           name: teoheberg-debug
           path: |
-            *.html
-            *.png
-            *.log
+            scripts/Teoheberg/*.html
+            scripts/Teoheberg/*.png
+            scripts/Teoheberg/*.log
           retention-days: 7
           if-no-files-found: ignore
