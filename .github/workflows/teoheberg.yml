@@ -1,23 +1,19 @@
-name: Teoheberg Auto Claim
+name: Teoheberg Auto Renew
 
 on:
-  # 每 6 小时一次
+  # 每4小时运行一次（UTC 0:00, 4:00, 8:00, 12:00, 16:00, 20:00）
   schedule:
-    - cron: '0 */6 * * *'
+    - cron: '0 */4 * * *'
   # 手动触发
   workflow_dispatch:
 
 jobs:
-  claim:
+  renewal:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout private repo
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          repository: ${{ github.repository_owner }}/${{ secrets.PRIVATE_REPO_NAME }}
-          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
-          path: scripts
       
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -43,32 +39,59 @@ jobs:
           # 验证 gost 是否运行
           ps aux | grep gost || echo "Warning: gost may not be running"
       
+      - name: Download Buster extension
+        run: |
+          echo "📦 下载 Buster 扩展..."
+          mkdir -p extensions
+          cd extensions
+          
+          # 下载 Buster 扩展 v3.1.0（最新版本）
+          wget -q https://github.com/dessant/buster/releases/download/v3.1.0/buster_captcha_solver_for_humans-3.1.0-chrome.zip -O buster.zip
+          
+          # 解压
+          unzip -q buster.zip -d buster
+          rm buster.zip
+          
+          echo "✅ Buster 扩展 v3.1.0 下载完成"
+          ls -la buster/
+      
       - name: Install Playwright
-        working-directory: scripts/Teoheberg
         run: |
           pip install playwright -q
           playwright install chromium
           playwright install-deps chromium
       
       - name: Install dependencies
-        working-directory: scripts/Teoheberg
         run: |
           pip install -r requirements.txt -q
       
-      - name: Run linkvertise claim script
-        working-directory: scripts/Teoheberg
+      - name: Run Teoheberg automation
         env:
           REMEMBER_WEB_COOKIE: ${{ secrets.REMEMBER_WEB_COOKIE }}
           SOCKS_PROXY_URL: ${{ secrets.SOCKS_PROXY_URL }}
           USE_GOST_PROXY: ${{ secrets.SOCKS_PROXY_URL != '' && 'true' || 'false' }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           GITHUB_ACTIONS: 'true'
-        run: python main2.py
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" python3 main.py
       
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: teoheberg-screenshots
-          path: scripts/Teoheberg/*.png
+          path: "*.png"
+          retention-days: 7
+          if-no-files-found: ignore
+      
+      - name: Upload debug files
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: teoheberg-debug
+          path: |
+            *.html
+            *.png
+            *.log
           retention-days: 7
           if-no-files-found: ignore
