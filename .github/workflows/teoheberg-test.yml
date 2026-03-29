@@ -79,7 +79,7 @@ jobs:
           SOCKS_PROXY_URL: ${{ secrets.SOCKS_PROXY_URL }}
           USE_GOST_PROXY: ${{ secrets.SOCKS_PROXY_URL != '' && 'true' || 'false' }}
           GITHUB_ACTIONS: 'true'
-        run: python main.py
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" python3 main.py
       
       - name: Upload screenshots
         if: always()
