@@ -1,0 +1,84 @@
+name: Gaming4free Auto Renewal
+
+on:
+  # 每小时运行一次
+  schedule:
+    - cron: '5 * * * *'
+  # 手动触发
+  workflow_dispatch:
+
+jobs:
+  renew:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout private repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/${{ secrets.PRIVATE_REPO_NAME }}
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          path: scripts
+      
+      - name: Set up WARP
+        uses: fscarmen/warp-on-actions@v1.4
+        with:
+          stack: dual
+          mode: client
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Download Buster extension
+        working-directory: scripts/Gaming4free
+        run: |
+          echo "📦 下载 Buster 扩展..."
+          mkdir -p extensions
+          cd extensions
+          
+          # 下载 Buster 扩展 v3.1.0（最新版本）
+          wget -q https://github.com/dessant/buster/releases/download/v3.1.0/buster_captcha_solver_for_humans-3.1.0-chrome.zip -O buster.zip
+          
+          # 解压
+          unzip -q buster.zip -d buster
+          rm buster.zip
+          
+          echo "✅ Buster 扩展 v3.1.0 下载完成"
+          ls -la buster/
+      
+      - name: Install Playwright
+        working-directory: scripts/Gaming4free
+        run: |
+          pip install -r requirements.txt -q
+          playwright install chromium
+          playwright install-deps chromium
+      
+      - name: Run server renewal script
+        working-directory: scripts/Gaming4free
+        env:
+          SERVER_NAME: ${{ secrets.SERVER_NAME }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GITHUB_ACTIONS: 'true'
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" python3 main.py
+      
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gaming4free-renewal-screenshots
+          path: scripts/Gaming4free/screenshots/*.png
+          retention-days: 7
+          if-no-files-found: ignore
+      
+      - name: Upload debug files
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gaming4free-renewal-debug
+          path: |
+            scripts/Gaming4free/*.html
+            scripts/Gaming4free/screenshots/*.png
+          retention-days: 7
+          if-no-files-found: ignore
