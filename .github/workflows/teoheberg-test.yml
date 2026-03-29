@@ -2,8 +2,8 @@ name: Teoheberg Auto Renew
 
 on:
   # 每天 UTC 4:00 运行（北京时间 12:00）
-  schedule:
-    - cron: '0 4 * * *'
+  # schedule:
+  #  - cron: '0 4 * * *'
   # 手动触发
   workflow_dispatch:
 
